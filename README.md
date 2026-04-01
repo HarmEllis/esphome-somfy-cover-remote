@@ -158,7 +158,7 @@ If you are upgrading from the version that used `esphome-cc1101` (the custom CC1
 2. **Add** the `spi`, `cc1101` (official), and `remote_transmitter` components (see example above)
 3. **Replace** `cc1101_module` with `remote_transmitter` in each cover configuration
 
-Your rolling codes stored in NVS will be preserved automatically (the default `storage_namespace` is `somfy_cover`, matching the previous version). No re-pairing is needed.
+**Note:** If you are also switching from the Arduino to the ESP-IDF framework, the NVS partition will be erased. This means your rolling codes will be lost and you will need to generate new `remote_code` values and re-pair your covers.
 
 ## Credits
 I originally used the ESPHome custom component from [evgeni](https://github.com/evgeni/esphome-configs/) after I found his article [Controlling Somfy roller shutters using an ESP32 and ESPHome](https://www.die-welt.net/2021/06/controlling-somfy-roller-shutters-using-an-esp32-and-esphome/).

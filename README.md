@@ -15,7 +15,7 @@ esphome:
   name: somfycontroller
 
 external_components:
-  - source: github://HarmEllis/esphome-somfy-cover-remote@main
+  - source: github://CorjanV/esphome-somfy-cover-remote@feature/official-cc1101-remote-transmitter
     components: [ somfy_cover ]
 
 esp32:

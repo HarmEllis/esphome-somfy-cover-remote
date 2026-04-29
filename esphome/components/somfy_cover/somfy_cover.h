@@ -2,7 +2,6 @@
 
 #include "esphome/core/automation.h"
 #include "esphome/core/component.h"
-#include "esphome/components/time_based/time_based_cover.h"
 #include "esphome/components/button/button.h"
 #include "esphome/components/remote_transmitter/remote_transmitter.h"
 #include "esphome/components/remote_base/remote_base.h"

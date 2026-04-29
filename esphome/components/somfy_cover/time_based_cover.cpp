@@ -11,7 +11,7 @@ static const char *const TAG = "time_based.cover";
 using namespace esphome::cover;
 
 void TimeBasedCover::dump_config() {
-  LOG_COVER("", "Time Based Cover", this);
+  LOG_COVER("", "Time Based Somfy Cover", this);
   ESP_LOGCONFIG(TAG,
                 "  Open Duration: %.1fs\n"
                 "  Close Duration: %.1fs",

@@ -4,7 +4,7 @@
 #include "esphome/core/application.h"
 
 namespace esphome {
-namespace time_based {
+namespace time_based_somfy_cover {
 
 static const char *const TAG = "time_based.cover";
 
@@ -183,5 +183,5 @@ void TimeBasedCover::recompute_position_() {
   this->last_recompute_time_ = now;
 }
 
-}  // namespace time_based
+}  // namespace time_based_somfy_cover
 }  // namespace esphome

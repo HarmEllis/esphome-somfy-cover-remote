@@ -9,6 +9,7 @@
 
 #include "RollingCodeStorage.h"
 #include "NVSRollingCodeStorage.h"
+#include "time_based_cover.h"
 
 #define COVER_OPEN 1.0f
 #define COVER_CLOSED 0.0f
@@ -38,7 +39,7 @@ template<typename... Ts> class SomfyCoverAction : public Action<Ts...> {
   }
 };
 
-class SomfyCover : public time_based::TimeBasedCover {
+class SomfyCover : public time_based_somfy_cover::TimeBasedCover {
  public:
   void setup() override;
   void loop() override;

@@ -52,22 +52,26 @@ cover::CoverTraits SomfyCover::get_traits() {
 void SomfyCover::control(const cover::CoverCall &call) { TimeBasedCover::control(call); }
 
 void SomfyCover::open() {
-  ESP_LOGI(TAG, "OPEN %s", this->get_object_id().c_str());
+  char object_id[OBJECT_ID_MAX_LEN];
+  ESP_LOGI(TAG, "OPEN %s", this->get_object_id_to(object_id).c_str());
   this->send_command(Command::Up);
 }
 
 void SomfyCover::close() {
-  ESP_LOGI(TAG, "CLOSE %s", this->get_object_id().c_str());
+  char object_id[OBJECT_ID_MAX_LEN];
+  ESP_LOGI(TAG, "CLOSE %s", this->get_object_id_to(object_id).c_str());
   this->send_command(Command::Down);
 }
 
 void SomfyCover::stop() {
-  ESP_LOGI(TAG, "STOP %s", this->get_object_id().c_str());
+  char object_id[OBJECT_ID_MAX_LEN];
+  ESP_LOGI(TAG, "STOP %s", this->get_object_id_to(object_id).c_str());
   this->send_command(Command::My);
 }
 
 void SomfyCover::program() {
-  ESP_LOGI(TAG, "PROG %s", this->get_object_id().c_str());
+  char object_id[OBJECT_ID_MAX_LEN];
+  ESP_LOGI(TAG, "PROG %s", this->get_object_id_to(object_id).c_str());
   this->send_command(Command::Prog);
 }
 

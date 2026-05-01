@@ -9,7 +9,7 @@ namespace somfy_cover {
 static const char *TAG = "somfy_cover.nvs";
 
 uint16_t NVSRollingCodeStorage::next_code() {
-  uint16_t code = 1000; // see also nvs_get_u16
+  uint16_t code = 1;
   nvs_handle_t handle;
 
   esp_err_t err = nvs_flash_init();
@@ -31,7 +31,7 @@ uint16_t NVSRollingCodeStorage::next_code() {
 
   err = nvs_get_u16(handle, this->key_, &code);
   if (err == ESP_ERR_NVS_NOT_FOUND) {
-    code = 1000;
+    code = 1;
   } else if (err != ESP_OK) {
     ESP_LOGE(TAG, "Failed to read rolling code: %s", esp_err_to_name(err));
     nvs_close(handle);

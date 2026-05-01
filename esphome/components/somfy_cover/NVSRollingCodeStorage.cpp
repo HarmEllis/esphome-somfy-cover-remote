@@ -9,7 +9,7 @@ namespace somfy_cover {
 static const char *TAG = "somfy_cover.nvs";
 
 uint16_t NVSRollingCodeStorage::next_code() {
-  uint16_t code = 1;
+  uint16_t code = 1000;
   nvs_handle_t handle;
 
   esp_err_t err = nvs_flash_init();

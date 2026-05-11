@@ -1,3 +1,4 @@
+#include <array>
 #include "esphome/core/log.h"
 #include "somfy_cover.h"
 
@@ -5,6 +6,12 @@ namespace esphome {
 namespace somfy_cover {
 
 static const char *TAG = "somfy_cover.cover";
+
+static void log_cover_action(const char *action, EntityBase *entity) {
+  std::array<char, OBJECT_ID_MAX_LEN> object_id_buf{};
+  StringRef object_id = entity->get_object_id_to(object_id_buf);
+  ESP_LOGI(TAG, "%s %s", action, object_id.c_str());
+}
 
 void SomfyCover::setup() {
   // Setup cover rolling code storage
@@ -52,22 +59,22 @@ cover::CoverTraits SomfyCover::get_traits() {
 void SomfyCover::control(const cover::CoverCall &call) { TimeBasedCover::control(call); }
 
 void SomfyCover::open() {
-  ESP_LOGI(TAG, "OPEN %s", this->get_object_id().c_str());
+  log_cover_action("OPEN", this);
   this->send_command(Command::Up);
 }
 
 void SomfyCover::close() {
-  ESP_LOGI(TAG, "CLOSE %s", this->get_object_id().c_str());
+  log_cover_action("CLOSE", this);
   this->send_command(Command::Down);
 }
 
 void SomfyCover::stop() {
-  ESP_LOGI(TAG, "STOP %s", this->get_object_id().c_str());
+  log_cover_action("STOP", this);
   this->send_command(Command::My);
 }
 
 void SomfyCover::program() {
-  ESP_LOGI(TAG, "PROG %s", this->get_object_id().c_str());
+  log_cover_action("PROG", this);
   this->send_command(Command::Prog);
 }
 

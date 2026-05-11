@@ -9,7 +9,7 @@ from esphome.const import (
 
 CODEOWNERS = ["@HarmEllis"]
 
-AUTO_LOAD = ["button"]
+AUTO_LOAD = ["button", "cover.time_based"]
 
 DEPENDENCIES = ["esp32"]
 

@@ -6,6 +6,7 @@
 #include "esphome/components/remote_transmitter/remote_transmitter.h"
 #include "esphome/components/remote_base/remote_base.h"
 
+// ESPHome moved TimeBasedCover in 2026.x; keep both include paths for compatibility.
 #if defined(__has_include)
 #if __has_include("esphome/components/time_based/cover/time_based_cover.h")
 #include "esphome/components/time_based/cover/time_based_cover.h"

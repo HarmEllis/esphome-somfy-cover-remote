@@ -6,20 +6,9 @@
 #include "esphome/components/remote_transmitter/remote_transmitter.h"
 #include "esphome/components/remote_base/remote_base.h"
 
-#if defined(__has_include)
-#if __has_include("esphome/components/time_based/cover/time_based_cover.h")
-#include "esphome/components/time_based/cover/time_based_cover.h"
-#elif __has_include("esphome/components/time_based/time_based_cover.h")
-#include "esphome/components/time_based/time_based_cover.h"
-#else
-#error "ESPHome TimeBasedCover header not found"
-#endif
-#else
-#include "esphome/components/time_based/time_based_cover.h"
-#endif
-
 #include "RollingCodeStorage.h"
 #include "NVSRollingCodeStorage.h"
+#include "time_based_cover.h"
 
 #define COVER_OPEN 1.0f
 #define COVER_CLOSED 0.0f
@@ -49,7 +38,7 @@ template<typename... Ts> class SomfyCoverAction : public Action<Ts...> {
   }
 };
 
-class SomfyCover : public time_based::TimeBasedCover {
+class SomfyCover : public time_based_somfy_cover::TimeBasedCover {
  public:
   void setup() override;
   void loop() override;

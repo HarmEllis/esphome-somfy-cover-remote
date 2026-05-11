@@ -5,11 +5,13 @@ from esphome.const import (
     CONF_CLOSE_DURATION,
     CONF_ID,
     CONF_OPEN_DURATION,
+    CONF_PLATFORM,
 )
+from esphome.core import AutoLoad, CORE
 
 CODEOWNERS = ["@HarmEllis"]
 
-AUTO_LOAD = ["button", "cover.time_based"]
+AUTO_LOAD = ["button"]
 
 DEPENDENCIES = ["esp32"]
 
@@ -51,6 +53,18 @@ CONFIG_SCHEMA = cv.All(
 
 
 async def to_code(config):
+    # Ensure ESPHome stages the time_based cover C++ sources for this external component.
+    # We add an autoload platform entry after validation, so users don't need to define
+    # a dummy `cover: - platform: time_based` block with required actions/durations.
+    cover_entries = CORE.config.get("cover")
+    if isinstance(cover_entries, list) and not any(
+        isinstance(entry, dict) and entry.get(CONF_PLATFORM) == "time_based"
+        for entry in cover_entries
+    ):
+        auto_load_entry = AutoLoad()
+        auto_load_entry[CONF_PLATFORM] = "time_based"
+        cover_entries.append(auto_load_entry)
+
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
     await cover.register_cover(var, config)

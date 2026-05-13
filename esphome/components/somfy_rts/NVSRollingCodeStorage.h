@@ -3,7 +3,7 @@
 #include "RollingCodeStorage.h"
 
 namespace esphome {
-namespace somfy_cover {
+namespace somfy_rts {
 
 class NVSRollingCodeStorage : public RollingCodeStorage {
  public:
@@ -15,5 +15,5 @@ class NVSRollingCodeStorage : public RollingCodeStorage {
   const char *key_;
 };
 
-}  // namespace somfy_cover
+}  // namespace somfy_rts
 }  // namespace esphome

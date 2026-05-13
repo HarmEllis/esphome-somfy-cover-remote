@@ -3,7 +3,7 @@
 #include <cstdint>
 
 namespace esphome {
-namespace somfy_cover {
+namespace somfy_rts {
 
 class RollingCodeStorage {
  public:
@@ -11,5 +11,5 @@ class RollingCodeStorage {
   virtual uint16_t next_code() = 0;
 };
 
-}  // namespace somfy_cover
+}  // namespace somfy_rts
 }  // namespace esphome

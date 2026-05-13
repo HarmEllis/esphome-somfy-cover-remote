@@ -4,9 +4,9 @@
 #include <nvs.h>
 
 namespace esphome {
-namespace somfy_cover {
+namespace somfy_rts {
 
-static const char *TAG = "somfy_cover.nvs";
+static const char *TAG = "somfy_rts.nvs";
 
 uint16_t NVSRollingCodeStorage::next_code() {
   uint16_t code = 1;
@@ -50,5 +50,5 @@ uint16_t NVSRollingCodeStorage::next_code() {
   return code;
 }
 
-}  // namespace somfy_cover
+}  // namespace somfy_rts
 }  // namespace esphome

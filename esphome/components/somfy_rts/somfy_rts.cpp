@@ -1,5 +1,3 @@
-#include <array>
-
 #include "esphome/core/log.h"
 #include "somfy_rts.h"
 
@@ -8,10 +6,8 @@ namespace somfy_rts {
 
 static const char *TAG = "somfy_rts.component";
 
-static void log_component_action(const char *action, EntityBase *entity) {
-  std::array<char, OBJECT_ID_MAX_LEN> object_id_buf{};
-  StringRef object_id = entity->get_object_id_to(object_id_buf);
-  ESP_LOGI(TAG, "%s %s", action, object_id.c_str());
+static void log_component_action(const char *action, uint32_t remote_code) {
+  ESP_LOGI(TAG, "%s remote=0x%06X", action, remote_code);
 }
 
 void SomfyRts::setup() {
@@ -32,22 +28,22 @@ void SomfyRts::dump_config() {
 }
 
 void SomfyRts::open() {
-  log_component_action("OPEN", this);
+  log_component_action("OPEN", this->remote_code_);
   this->send_command(Command::Up);
 }
 
 void SomfyRts::close() {
-  log_component_action("CLOSE", this);
+  log_component_action("CLOSE", this->remote_code_);
   this->send_command(Command::Down);
 }
 
 void SomfyRts::stop() {
-  log_component_action("STOP", this);
+  log_component_action("STOP", this->remote_code_);
   this->send_command(Command::My);
 }
 
 void SomfyRts::program() {
-  log_component_action("PROG", this);
+  log_component_action("PROG", this->remote_code_);
   this->send_command(Command::Prog);
 }
 

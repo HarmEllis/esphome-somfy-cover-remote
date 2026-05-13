@@ -59,8 +59,7 @@ template<typename... Ts> class OpenAction : public Action<Ts...> {
  public:
   explicit OpenAction(SomfyRts *parent) : parent_(parent) {}
 
-  void play(const Ts &...x) override {
-    (void) x;
+  void play(const Ts &...) override {
     this->parent_->open();
   }
 
@@ -72,8 +71,7 @@ template<typename... Ts> class CloseAction : public Action<Ts...> {
  public:
   explicit CloseAction(SomfyRts *parent) : parent_(parent) {}
 
-  void play(const Ts &...x) override {
-    (void) x;
+  void play(const Ts &...) override {
     this->parent_->close();
   }
 
@@ -85,8 +83,7 @@ template<typename... Ts> class StopAction : public Action<Ts...> {
  public:
   explicit StopAction(SomfyRts *parent) : parent_(parent) {}
 
-  void play(const Ts &...x) override {
-    (void) x;
+  void play(const Ts &...) override {
     this->parent_->stop();
   }
 
@@ -98,8 +95,7 @@ template<typename... Ts> class ProgramAction : public Action<Ts...> {
  public:
   explicit ProgramAction(SomfyRts *parent) : parent_(parent) {}
 
-  void play(const Ts &...x) override {
-    (void) x;
+  void play(const Ts &...) override {
     this->parent_->program();
   }
 

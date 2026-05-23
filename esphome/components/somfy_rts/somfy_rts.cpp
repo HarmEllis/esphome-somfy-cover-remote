@@ -1,84 +1,63 @@
-#include <array>
 #include "esphome/core/log.h"
-#include "somfy_cover.h"
+#include "somfy_rts.h"
 
 namespace esphome {
-namespace somfy_cover {
+namespace somfy_rts {
 
-static const char *TAG = "somfy_cover.cover";
+static const char *TAG = "somfy_rts.component";
 
-static void log_cover_action(const char *action, EntityBase *entity) {
-  std::array<char, OBJECT_ID_MAX_LEN> object_id_buf{};
-  StringRef object_id = entity->get_object_id_to(object_id_buf);
-  ESP_LOGI(TAG, "%s %s", action, object_id.c_str());
+static void log_component_action(const char *action, uint32_t remote_code) {
+  ESP_LOGI(TAG, "%s remote=0x%06X", action, remote_code);
 }
 
-void SomfyCover::setup() {
-  // Setup cover rolling code storage
+void SomfyRts::setup() {
   this->storage_ = new NVSRollingCodeStorage(this->storage_namespace_, this->storage_key_);
 
-  // Attach to timebased cover controls
-  automationTriggerUp_ = new Automation<>(this->get_open_trigger());
-  actionTriggerUp_ = new SomfyCoverAction<>([this] { this->open(); });
-  automationTriggerUp_->add_action(actionTriggerUp_);
-
-  automationTriggerDown_ = new Automation<>(this->get_close_trigger());
-  actionTriggerDown_ = new SomfyCoverAction<>([this] { this->close(); });
-  automationTriggerDown_->add_action(actionTriggerDown_);
-
-  automationTriggerStop_ = new Automation<>(this->get_stop_trigger());
-  actionTriggerStop_ = new SomfyCoverAction<>([this] { this->stop(); });
-  automationTriggerStop_->add_action(actionTriggerStop_);
-
-  // Attach the prog button
-  this->cover_prog_button_->add_on_press_callback([this] { this->program(); });
-
-  // Set extra settings
-  this->has_built_in_endstop_ = true;
-  this->assumed_state_ = true;
-
-  TimeBasedCover::setup();
+  if (this->cover_prog_button_ != nullptr) {
+    this->cover_prog_button_->add_on_press_callback([this] { this->program(); });
+  }
 }
 
-void SomfyCover::loop() { TimeBasedCover::loop(); }
-
-void SomfyCover::dump_config() {
-  ESP_LOGCONFIG(TAG, "Somfy cover:");
+void SomfyRts::dump_config() {
+  ESP_LOGCONFIG(TAG, "Somfy RTS command layer:");
   ESP_LOGCONFIG(TAG, "  Remote code: 0x%06X", this->remote_code_);
   ESP_LOGCONFIG(TAG, "  Storage namespace: %s", this->storage_namespace_);
   ESP_LOGCONFIG(TAG, "  Storage key: %s", this->storage_key_);
   ESP_LOGCONFIG(TAG, "  Repeat count: %d", this->repeat_count_);
+  ESP_LOGCONFIG(TAG, "  Prog button attached: %s", YESNO(this->cover_prog_button_ != nullptr));
 }
 
-cover::CoverTraits SomfyCover::get_traits() {
-  auto traits = TimeBasedCover::get_traits();
-  traits.set_supports_tilt(false);
-  return traits;
-}
-
-void SomfyCover::control(const cover::CoverCall &call) { TimeBasedCover::control(call); }
-
-void SomfyCover::open() {
-  log_cover_action("OPEN", this);
+void SomfyRts::open() {
+  log_component_action("OPEN", this->remote_code_);
   this->send_command(Command::Up);
 }
 
-void SomfyCover::close() {
-  log_cover_action("CLOSE", this);
+void SomfyRts::close() {
+  log_component_action("CLOSE", this->remote_code_);
   this->send_command(Command::Down);
 }
 
-void SomfyCover::stop() {
-  log_cover_action("STOP", this);
+void SomfyRts::stop() {
+  log_component_action("STOP", this->remote_code_);
   this->send_command(Command::My);
 }
 
-void SomfyCover::program() {
-  log_cover_action("PROG", this);
+void SomfyRts::program() {
+  log_component_action("PROG", this->remote_code_);
   this->send_command(Command::Prog);
 }
 
-void SomfyCover::send_command(Command command) {
+void SomfyRts::send_command(Command command) {
+  if (this->remote_transmitter_ == nullptr) {
+    ESP_LOGE(TAG, "No remote_transmitter configured");
+    return;
+  }
+
+  if (this->storage_ == nullptr) {
+    ESP_LOGE(TAG, "Rolling code storage is not initialized");
+    return;
+  }
+
   const uint16_t rolling_code = this->storage_->next_code();
 
   uint8_t frame[7];
@@ -99,7 +78,7 @@ void SomfyCover::send_command(Command command) {
   call.perform();
 }
 
-void SomfyCover::build_frame(uint8_t *frame, Command command, uint16_t rolling_code) {
+void SomfyRts::build_frame(uint8_t *frame, Command command, uint16_t rolling_code) {
   const uint8_t button = static_cast<uint8_t>(command);
 
   frame[0] = 0xA7;              // Encryption key
@@ -123,11 +102,11 @@ void SomfyCover::build_frame(uint8_t *frame, Command command, uint16_t rolling_c
     frame[i] ^= frame[i - 1];
   }
 
-  ESP_LOGD(TAG, "Frame: %02X %02X %02X %02X %02X %02X %02X",
-           frame[0], frame[1], frame[2], frame[3], frame[4], frame[5], frame[6]);
+  ESP_LOGD(TAG, "Frame: %02X %02X %02X %02X %02X %02X %02X", frame[0], frame[1], frame[2], frame[3], frame[4],
+           frame[5], frame[6]);
 }
 
-void SomfyCover::build_timings(remote_base::RawTimings &t, uint8_t *frame, uint8_t sync_count) {
+void SomfyRts::build_timings(remote_base::RawTimings &t, uint8_t *frame, uint8_t sync_count) {
   // Wake-up pulse (only for first frame, sync_count == 2)
   if (sync_count == 2) {
     send_high(t, 9415);
@@ -159,13 +138,9 @@ void SomfyCover::build_timings(remote_base::RawTimings &t, uint8_t *frame, uint8
   send_low(t, 415 + 30000);
 }
 
-void SomfyCover::send_high(remote_base::RawTimings &t, int32_t duration_usecs) {
-  t.push_back(duration_usecs);
-}
+void SomfyRts::send_high(remote_base::RawTimings &t, int32_t duration_usecs) { t.push_back(duration_usecs); }
 
-void SomfyCover::send_low(remote_base::RawTimings &t, int32_t duration_usecs) {
-  t.push_back(-duration_usecs);
-}
+void SomfyRts::send_low(remote_base::RawTimings &t, int32_t duration_usecs) { t.push_back(-duration_usecs); }
 
-}  // namespace somfy_cover
+}  // namespace somfy_rts
 }  // namespace esphome

@@ -40,6 +40,7 @@ class SomfyRts : public Component {
   void program();
   void open_tilt();
   void close_tilt();
+  void send_command(Command command, int repeat_count = -1);
 
  protected:
   remote_base::RemoteTransmitterBase *remote_transmitter_{nullptr};
@@ -52,7 +53,6 @@ class SomfyRts : public Component {
 
   RollingCodeStorage *storage_{nullptr};
 
-  void send_command(Command command, int repeat_count = -1);
   void build_frame(uint8_t *frame, Command command, uint16_t rolling_code);
   void build_timings(remote_base::RawTimings &t, uint8_t *frame, uint8_t sync_count);
   static void send_high(remote_base::RawTimings &t, int32_t duration_usecs);
@@ -129,6 +129,23 @@ template<typename... Ts> class CloseTiltAction : public Action<Ts...> {
 
  protected:
   SomfyRts *parent_;
+};
+
+template<typename... Ts> class SendAction : public Action<Ts...> {
+ public:
+  explicit SendAction(SomfyRts *parent) : parent_(parent) {}
+
+  void set_command(Command command) { this->command_ = command; }
+  TEMPLATABLE_VALUE(int, repeat_count)
+
+  void play(const Ts &... x) override {
+    const int repeat = this->repeat_count_.value_or(x..., -1);
+    this->parent_->send_command(this->command_, repeat);
+  }
+
+ protected:
+  SomfyRts *parent_;
+  Command command_{Command::My};
 };
 
 }  // namespace somfy_rts

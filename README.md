@@ -126,6 +126,7 @@ These actions can be used in automations, including `time_based` cover actions:
 - `somfy_rts.program`
 - `somfy_rts.open_tilt`
 - `somfy_rts.close_tilt`
+- `somfy_rts.send` (generic command — see [Generic send action](#generic-send-action))
 
 Examples:
 
@@ -197,6 +198,40 @@ cover:
 ```
 
 If tilt does not work with the default `tilt_repeat_count: 3`, sweep values `1..4` for your louvre model.
+
+## Generic send action
+
+For commands that do not map to the high-level actions — for example "long program" (used to pair a second remote) or experimenting with non-standard repeat counts — use `somfy_rts.send`:
+
+| Field | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `id` | Yes | | ID of the `somfy_rts` instance |
+| `command` | Yes | | One of `UP`, `DOWN`, `MY`, `PROG` |
+| `repeat_count` | No | `repeat_command_count` | Templatable integer (1-100). Overrides the configured `repeat_command_count` for this single call. |
+
+Example — long program (15 repeats of `PROG`) to add an extra remote to an already-paired motor:
+
+```yaml
+button:
+  - platform: template
+    name: "Pair extra remote"
+    on_press:
+      - somfy_rts.send:
+          id: livingroom_cmd
+          command: PROG
+          repeat_count: 15
+```
+
+Example — templatable repeat count:
+
+```yaml
+on_...:
+  then:
+    - somfy_rts.send:
+        id: livingroom_cmd
+        command: UP
+        repeat_count: !lambda 'return id(tilt_steps).state;'
+```
 
 ## Credits
 

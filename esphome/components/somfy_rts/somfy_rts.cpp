@@ -69,7 +69,19 @@ void SomfyRts::send_command(Command command, int repeat_count) {
     return;
   }
 
-  const int effective_repeat_count = repeat_count < 0 ? this->repeat_count_ : repeat_count;
+  int effective_repeat_count;
+  if (repeat_count < 0) {
+    // Internal sentinel: use the configured default
+    effective_repeat_count = this->repeat_count_;
+  } else if (repeat_count < 1) {
+    ESP_LOGW(TAG, "repeat_count %d below 1, clamping to 1", repeat_count);
+    effective_repeat_count = 1;
+  } else if (repeat_count > 100) {
+    ESP_LOGW(TAG, "repeat_count %d above 100, clamping to 100", repeat_count);
+    effective_repeat_count = 100;
+  } else {
+    effective_repeat_count = repeat_count;
+  }
   ESP_LOGD(TAG, "Repeat count: %d", effective_repeat_count);
 
   const uint16_t rolling_code = this->storage_->next_code();

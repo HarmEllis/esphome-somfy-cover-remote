@@ -32,11 +32,14 @@ class SomfyRts : public Component {
   void set_storage_key(const char *storage_key) { this->storage_key_ = storage_key; }
   void set_storage_namespace(const char *storage_namespace) { this->storage_namespace_ = storage_namespace; }
   void set_repeat_count(int repeat_count) { this->repeat_count_ = repeat_count; }
+  void set_tilt_repeat_count(int tilt_repeat_count) { this->tilt_repeat_count_ = tilt_repeat_count; }
 
   void open();
   void close();
   void stop();
   void program();
+  void open_tilt();
+  void close_tilt();
 
  protected:
   remote_base::RemoteTransmitterBase *remote_transmitter_{nullptr};
@@ -45,10 +48,11 @@ class SomfyRts : public Component {
   const char *storage_key_{nullptr};
   const char *storage_namespace_{"somfy_rts"};
   int repeat_count_{4};
+  int tilt_repeat_count_{3};
 
   RollingCodeStorage *storage_{nullptr};
 
-  void send_command(Command command);
+  void send_command(Command command, int repeat_count = -1);
   void build_frame(uint8_t *frame, Command command, uint16_t rolling_code);
   void build_timings(remote_base::RawTimings &t, uint8_t *frame, uint8_t sync_count);
   static void send_high(remote_base::RawTimings &t, int32_t duration_usecs);
@@ -97,6 +101,30 @@ template<typename... Ts> class ProgramAction : public Action<Ts...> {
 
   void play(const Ts &...) override {
     this->parent_->program();
+  }
+
+ protected:
+  SomfyRts *parent_;
+};
+
+template<typename... Ts> class OpenTiltAction : public Action<Ts...> {
+ public:
+  explicit OpenTiltAction(SomfyRts *parent) : parent_(parent) {}
+
+  void play(const Ts &...) override {
+    this->parent_->open_tilt();
+  }
+
+ protected:
+  SomfyRts *parent_;
+};
+
+template<typename... Ts> class CloseTiltAction : public Action<Ts...> {
+ public:
+  explicit CloseTiltAction(SomfyRts *parent) : parent_(parent) {}
+
+  void play(const Ts &...) override {
+    this->parent_->close_tilt();
   }
 
  protected:

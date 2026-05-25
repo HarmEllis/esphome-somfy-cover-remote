@@ -24,6 +24,7 @@ void SomfyRts::dump_config() {
   ESP_LOGCONFIG(TAG, "  Storage namespace: %s", this->storage_namespace_);
   ESP_LOGCONFIG(TAG, "  Storage key: %s", this->storage_key_);
   ESP_LOGCONFIG(TAG, "  Repeat count: %d", this->repeat_count_);
+  ESP_LOGCONFIG(TAG, "  Tilt repeat count: %d", this->tilt_repeat_count_);
   ESP_LOGCONFIG(TAG, "  Prog button attached: %s", YESNO(this->cover_prog_button_ != nullptr));
 }
 
@@ -47,7 +48,17 @@ void SomfyRts::program() {
   this->send_command(Command::Prog);
 }
 
-void SomfyRts::send_command(Command command) {
+void SomfyRts::open_tilt() {
+  log_component_action("OPEN_TILT", this->remote_code_);
+  this->send_command(Command::Up, this->tilt_repeat_count_);
+}
+
+void SomfyRts::close_tilt() {
+  log_component_action("CLOSE_TILT", this->remote_code_);
+  this->send_command(Command::Down, this->tilt_repeat_count_);
+}
+
+void SomfyRts::send_command(Command command, int repeat_count) {
   if (this->remote_transmitter_ == nullptr) {
     ESP_LOGE(TAG, "No remote_transmitter configured");
     return;
@@ -57,6 +68,9 @@ void SomfyRts::send_command(Command command) {
     ESP_LOGE(TAG, "Rolling code storage is not initialized");
     return;
   }
+
+  const int effective_repeat_count = repeat_count < 0 ? this->repeat_count_ : repeat_count;
+  ESP_LOGD(TAG, "Repeat count: %d", effective_repeat_count);
 
   const uint16_t rolling_code = this->storage_->next_code();
 
@@ -69,7 +83,7 @@ void SomfyRts::send_command(Command command) {
   this->build_timings(timings, frame, 2);
 
   // Repeat frames with 7 hardware sync pulses
-  for (int i = 0; i < this->repeat_count_; i++) {
+  for (int i = 0; i < effective_repeat_count; i++) {
     this->build_timings(timings, frame, 7);
   }
 

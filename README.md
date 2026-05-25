@@ -113,6 +113,7 @@ cover:
 | `storage_key` | Yes | | Key for rolling code storage in NVS (max 15 chars, unique per cover) |
 | `storage_namespace` | No | `somfy_rts` | NVS namespace for rolling code storage (max 15 chars) |
 | `repeat_command_count` | No | `4` | Number of repeated frames after the first frame (1-100) |
+| `tilt_repeat_count` | No | `3` | Number of repeated frames for `open_tilt` / `close_tilt` (1-100). Same semantics as `repeat_command_count` (one initial frame + N repeats). Some louvres need a different value — if tilt does not work, sweep `1..4`. |
 | `prog_button` | No | | Optional `button` ID. If set, pressing that button sends `PROG` |
 
 ## Actions
@@ -123,6 +124,8 @@ These actions can be used in automations, including `time_based` cover actions:
 - `somfy_rts.close`
 - `somfy_rts.stop`
 - `somfy_rts.program`
+- `somfy_rts.open_tilt`
+- `somfy_rts.close_tilt`
 
 Examples:
 
@@ -153,6 +156,47 @@ Put your cover in program mode with an already paired remote, then send `PROG` f
 ## Repeating command setting
 
 Default behavior is to send one initial frame + repeated frames (`repeat_command_count`, default `4`). Some devices require fewer repeats.
+
+## Tilt commands
+
+Somfy RTS louvre covers tilt by sending the same `UP` / `DOWN` command but with a lower number of repeated frames. The `somfy_rts.open_tilt` and `somfy_rts.close_tilt` actions send `UP` / `DOWN` using `tilt_repeat_count` (default `3`) instead of `repeat_command_count`.
+
+The official ESPHome `time_based` cover platform has no tilt hooks, so wire these actions to your own controls. Two common patterns:
+
+### Template buttons (simple)
+
+```yaml
+button:
+  - platform: template
+    name: "Livingroom tilt open"
+    on_press:
+      - somfy_rts.open_tilt: livingroom_cmd
+  - platform: template
+    name: "Livingroom tilt close"
+    on_press:
+      - somfy_rts.close_tilt: livingroom_cmd
+```
+
+### Template cover with `tilt_action` (advanced)
+
+```yaml
+cover:
+  - platform: template
+    name: "Livingroom louvre tilt"
+    device_class: shutter
+    optimistic: true   # no tilt feedback from the motor
+    has_position: false
+    tilt_action:
+      - if:
+          condition:
+            lambda: 'return tilt > 0.5;'
+          then:
+            - somfy_rts.open_tilt: livingroom_cmd
+          else:
+            - somfy_rts.close_tilt: livingroom_cmd
+```
+
+If tilt does not work with the default `tilt_repeat_count: 3`, sweep values `1..4` for your louvre model.
 
 ## Credits
 

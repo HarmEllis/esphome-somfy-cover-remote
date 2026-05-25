@@ -16,6 +16,8 @@ OpenAction = somfy_rts_ns.class_("OpenAction", automation.Action)
 CloseAction = somfy_rts_ns.class_("CloseAction", automation.Action)
 StopAction = somfy_rts_ns.class_("StopAction", automation.Action)
 ProgramAction = somfy_rts_ns.class_("ProgramAction", automation.Action)
+OpenTiltAction = somfy_rts_ns.class_("OpenTiltAction", automation.Action)
+CloseTiltAction = somfy_rts_ns.class_("CloseTiltAction", automation.Action)
 
 CONF_REMOTE_TRANSMITTER = "remote_transmitter"
 CONF_PROG_BUTTON = "prog_button"
@@ -23,6 +25,7 @@ CONF_REMOTE_CODE = "remote_code"
 CONF_SOMFY_STORAGE_KEY = "storage_key"
 CONF_SOMFY_STORAGE_NAMESPACE = "storage_namespace"
 CONF_REPEAT_COMMAND_COUNT = "repeat_command_count"
+CONF_TILT_REPEAT_COUNT = "tilt_repeat_count"
 
 CONFIG_SCHEMA = cv.Schema(
     {
@@ -36,6 +39,7 @@ CONFIG_SCHEMA = cv.Schema(
             cv.string, cv.Length(max=15)
         ),
         cv.Optional(CONF_REPEAT_COMMAND_COUNT, default=4): cv.int_range(min=1, max=100),
+        cv.Optional(CONF_TILT_REPEAT_COUNT, default=3): cv.int_range(min=1, max=100),
         cv.Optional(CONF_PROG_BUTTON): cv.use_id(button.Button),
     }
 ).extend(cv.COMPONENT_SCHEMA)
@@ -56,6 +60,7 @@ async def to_code(config):
     cg.add(var.set_storage_key(config[CONF_SOMFY_STORAGE_KEY]))
     cg.add(var.set_storage_namespace(config[CONF_SOMFY_STORAGE_NAMESPACE]))
     cg.add(var.set_repeat_count(config[CONF_REPEAT_COMMAND_COUNT]))
+    cg.add(var.set_tilt_repeat_count(config[CONF_TILT_REPEAT_COUNT]))
 
 
 SOMFY_ACTION_SCHEMA = cv.Schema(
@@ -74,6 +79,12 @@ SOMFY_ACTION_SCHEMA = cv.Schema(
 )
 @automation.register_action(
     "somfy_rts.program", ProgramAction, SOMFY_ACTION_SCHEMA, synchronous=True
+)
+@automation.register_action(
+    "somfy_rts.open_tilt", OpenTiltAction, SOMFY_ACTION_SCHEMA, synchronous=True
+)
+@automation.register_action(
+    "somfy_rts.close_tilt", CloseTiltAction, SOMFY_ACTION_SCHEMA, synchronous=True
 )
 async def somfy_action_to_code(config, action_id, template_arg, args):
     parent = await cg.get_variable(config[CONF_ID])

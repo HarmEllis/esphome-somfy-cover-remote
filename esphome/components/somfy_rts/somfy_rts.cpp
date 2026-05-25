@@ -58,7 +58,22 @@ void SomfyRts::close_tilt() {
   this->send_command(Command::Down, this->tilt_repeat_count_);
 }
 
+void SomfyRts::send_command(Command command) {
+  this->send_command_impl_(command, this->repeat_count_);
+}
+
 void SomfyRts::send_command(Command command, int repeat_count) {
+  if (repeat_count < 1) {
+    ESP_LOGW(TAG, "repeat_count %d below 1, clamping to 1", repeat_count);
+    repeat_count = 1;
+  } else if (repeat_count > 100) {
+    ESP_LOGW(TAG, "repeat_count %d above 100, clamping to 100", repeat_count);
+    repeat_count = 100;
+  }
+  this->send_command_impl_(command, repeat_count);
+}
+
+void SomfyRts::send_command_impl_(Command command, int repeat_count) {
   if (this->remote_transmitter_ == nullptr) {
     ESP_LOGE(TAG, "No remote_transmitter configured");
     return;
@@ -69,20 +84,7 @@ void SomfyRts::send_command(Command command, int repeat_count) {
     return;
   }
 
-  int effective_repeat_count;
-  if (repeat_count < 0) {
-    // Internal sentinel: use the configured default
-    effective_repeat_count = this->repeat_count_;
-  } else if (repeat_count < 1) {
-    ESP_LOGW(TAG, "repeat_count %d below 1, clamping to 1", repeat_count);
-    effective_repeat_count = 1;
-  } else if (repeat_count > 100) {
-    ESP_LOGW(TAG, "repeat_count %d above 100, clamping to 100", repeat_count);
-    effective_repeat_count = 100;
-  } else {
-    effective_repeat_count = repeat_count;
-  }
-  ESP_LOGD(TAG, "Repeat count: %d", effective_repeat_count);
+  ESP_LOGD(TAG, "Repeat count: %d", repeat_count);
 
   const uint16_t rolling_code = this->storage_->next_code();
 
@@ -95,7 +97,7 @@ void SomfyRts::send_command(Command command, int repeat_count) {
   this->build_timings(timings, frame, 2);
 
   // Repeat frames with 7 hardware sync pulses
-  for (int i = 0; i < effective_repeat_count; i++) {
+  for (int i = 0; i < repeat_count; i++) {
     this->build_timings(timings, frame, 7);
   }
 

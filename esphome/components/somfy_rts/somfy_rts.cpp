@@ -63,9 +63,9 @@ void SomfyRts::send_command(Command command) {
 }
 
 void SomfyRts::send_command(Command command, int repeat_count) {
-  if (repeat_count < 1) {
-    ESP_LOGW(TAG, "repeat_count %d below 1, clamping to 1", repeat_count);
-    repeat_count = 1;
+  if (repeat_count < 0) {
+    ESP_LOGW(TAG, "repeat_count %d below 0, clamping to 0", repeat_count);
+    repeat_count = 0;
   } else if (repeat_count > 100) {
     ESP_LOGW(TAG, "repeat_count %d above 100, clamping to 100", repeat_count);
     repeat_count = 100;

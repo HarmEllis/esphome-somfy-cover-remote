@@ -49,8 +49,8 @@ CONFIG_SCHEMA = cv.Schema(
         cv.Optional(CONF_SOMFY_STORAGE_NAMESPACE, default="somfy_rts"): cv.All(
             cv.string, cv.Length(max=15)
         ),
-        cv.Optional(CONF_REPEAT_COMMAND_COUNT, default=4): cv.int_range(min=1, max=100),
-        cv.Optional(CONF_TILT_REPEAT_COUNT, default=3): cv.int_range(min=1, max=100),
+        cv.Optional(CONF_REPEAT_COMMAND_COUNT, default=4): cv.int_range(min=0, max=100),
+        cv.Optional(CONF_TILT_REPEAT_COUNT, default=3): cv.int_range(min=0, max=100),
         cv.Optional(CONF_PROG_BUTTON): cv.use_id(button.Button),
     }
 ).extend(cv.COMPONENT_SCHEMA)
@@ -106,7 +106,7 @@ SOMFY_SEND_ACTION_SCHEMA = cv.Schema(
     {
         cv.GenerateID(CONF_ID): cv.use_id(SomfyRts),
         cv.Required(CONF_COMMAND): cv.enum(COMMAND_MAP, upper=True),
-        cv.Optional(CONF_REPEAT_COUNT): cv.templatable(cv.int_range(min=1, max=100)),
+        cv.Optional(CONF_REPEAT_COUNT): cv.templatable(cv.int_range(min=0, max=100)),
     }
 )
 

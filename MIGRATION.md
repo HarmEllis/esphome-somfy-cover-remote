@@ -36,6 +36,7 @@ Old `cover.platform=somfy_cover` fields -> New location
 - `storage_key` -> `somfy_rts.storage_key`
 - `storage_namespace` -> `somfy_rts.storage_namespace`
 - `repeat_command_count` -> `somfy_rts.repeat_command_count`
+- `tilt_repeat_count` -> `somfy_rts.tilt_repeat_count`
 - `prog_button` -> optional `somfy_rts.prog_button` (or call `somfy_rts.program` in automations)
 - `open_duration` -> `cover.platform=time_based.open_duration`
 - `close_duration` -> `cover.platform=time_based.close_duration`
@@ -61,7 +62,8 @@ somfy_rts:
     remote_code: 0x6b2a03
     storage_key: "livingroom"
     storage_namespace: "somfy_cover"
-    repeat_command_count: 4
+    repeat_command_count: 1
+    tilt_repeat_count: 3
 
 cover:
   - platform: time_based

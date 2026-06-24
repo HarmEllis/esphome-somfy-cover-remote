@@ -142,6 +142,7 @@ inline bool decode_somfy_frame_at(const std::vector<int32_t> &timings, size_t da
   // Expand the data pulses into half-bits, stopping at the inter-frame gap or
   // the next frame's hardware sync (>= 3 half-symbols).
   std::vector<bool> hb;  // true = HIGH half-bit
+  bool terminated = false;
   for (size_t j = data_start; j < n; j++) {
     int hs = somfy_half_symbols(timings[j]);
     if (hs >= 3 || hs < 1) {
@@ -149,11 +150,21 @@ inline bool decode_somfy_frame_at(const std::vector<int32_t> &timings, size_t da
       // LOW half-bit of a final '0' bit; restore it so that bit can decode.
       if (timings[j] < 0)
         hb.push_back(false);
+      terminated = true;
       break;
     }
     for (int k = 0; k < hs; k++)
       hb.push_back(timings[j] > 0);
   }
+  // A real receiver frequently splits the transmission right at the end of the
+  // data burst, so the capture ends without the inter-frame gap that would
+  // otherwise restore the final '0' bit's trailing LOW half-bit (see above).
+  // When the run ends because we reached the end of the capture rather than a
+  // terminator, append that idle-low half-bit so phase-1 alignment still has
+  // its full 112 data half-bits. (A complete-but-noisy frame fails the
+  // Manchester/checksum guards below regardless, so this can't false-decode.)
+  if (!terminated)
+    hb.push_back(false);
 
   // 56 bits = 112 half-bits. The leading sync-low shifts the alignment by one,
   // so phase 1 is the expected alignment; phase 0 is a fallback. The checksum
@@ -193,9 +204,13 @@ inline bool decode_somfy_frame_at(const std::vector<int32_t> &timings, size_t da
       continue;
 
     // The 4-bit checksum alone is weak on a noisy 433 MHz receiver, so also
-    // require the fixed key byte and a supported command nibble. This rejects
-    // checksum-valid garbage that this protocol would never produce.
-    if (frame[0] != 0xA7)
+    // require the encryption-key byte and a supported command nibble. This
+    // rejects checksum-valid garbage that this protocol would never produce.
+    // Byte 0 is the rolling "encryption key": real Somfy remotes vary the low
+    // nibble (observed 0xA4, 0xA5, ...) while keeping the high nibble 0xA, so
+    // match only the high nibble. (This project's own transmitter always emits
+    // 0xA7, which is why genuine remotes failed to decode before this.)
+    if ((frame[0] & 0xF0) != 0xA0)
       continue;
     const uint8_t button = frame[1] >> 4;
     if (button != static_cast<uint8_t>(Command::My) && button != static_cast<uint8_t>(Command::Up) &&

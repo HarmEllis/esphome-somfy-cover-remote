@@ -133,6 +133,54 @@ int main() {
     cases++;
   }
 
+  // Real CC1101 + remote_receiver captures (433 MHz, edge-merged). These cover
+  // two things the synthetic cases above don't: a genuine Somfy remote uses a
+  // rolling "encryption key" byte whose low nibble varies (0xA4/0xA5 here, not
+  // the 0xA7 the transmitter emits), and the receiver split each transmission
+  // right at the end of the data burst, so the capture ends with no inter-frame
+  // gap and is one half-bit short of a clean phase-1 frame.
+  struct RealCapture {
+    const char *name;
+    Command command;
+    uint16_t rolling;
+    uint32_t remote;
+    std::vector<int32_t> timings;
+  };
+  const std::vector<RealCapture> real_captures = {
+      {"remote A (key 0xA4)", Command::Up, 4745, 0x586D43,
+       {-1300, 1267, -1320, 1270, -654, 615, -1316, 1269, -667, 635, -1299, 1274, -672, 601, -670, 624,
+        -1309, 1260, -1326, 610, -666, 634, -664, 1265, -667, 631, -1315, 593, -664, 1289, -649, 621,
+        -1317, 1267, -671, 620, -683, 612, -1300, 1268, -668, 633, -650, 642, -654, 620, -673, 623,
+        -1317, 1267, -651, 640, -1303, 1261, -672, 614, -688, 611, -666, 614, -667, 634, -1312, 1266,
+        -648, 643, -1306, 1275, -1294, 1260, -1340, 610, -646, 1289, -663, 610, -1323, 621, -653, 1268}},
+      {"remote B (key 0xA5)", Command::Up, 2102, 0x596D43,
+       {-1298, 1268, -1314, 1273, -671, 616, -1299, 1268, -1314, 623, -666, 1259, -673, 620, -689, 612,
+        -663, 610, -1319, 1263, -1308, 621, -659, 1288, -662, 631, -664, 611, -1298, 642, -654, 1266,
+        -1319, 614, -665, 1259, -1313, 639, -649, 620, -665, 1286, -1301, 615, -673, 616, -672, 624,
+        -642, 626, -688, 1264, -666, 603, -687, 611, -1298, 1295, -1297, 1267, -657, 639, -648, 643,
+        -1292, 640, -647, 623, -665, 632, -664, 609, -674, 616, -667, 1264, -674, 617, -1320, 612,
+        -673, 1268, -655, 640}},
+      {"controller (key 0xA7)", Command::Up, 448, 0x1904DA,
+       {-1274, 1294, -1244, 1303, -637, 634, -1291, 641, -625, 654, -643, 643, -617, 1294, -648, 617,
+        -641, 662, -1268, 646, -639, 655, -622, 1270, -1272, 1299, -623, 654, -638, 644, -1271, 656,
+        -616, 665, -617, 670, -634, 1292, -1264, 1284, -638, 634, -1269, 659, -640, 623, -660, 618,
+        -646, 1281, -1266, 1297, -1274, 1289, -1274, 643, -640, 1283, -650, 623, -1268, 1313, -1274,
+        1269, -616, 659, -1290, 1263, -1299, 1294, -620, 643, -631, 659, -1269, 1276, -650, 638, -634,
+        640}},
+  };
+  for (const auto &rc : real_captures) {
+    DecodedFrame f;
+    bool ok = decode_somfy_frame(rc.timings, &f);
+    CHECK(ok, "[real] %s failed to decode\n", rc.name);
+    if (ok) {
+      CHECK(f.command == rc.command, "[real] %s command 0x%X != 0x%X\n", rc.name, (unsigned) f.command,
+            (unsigned) rc.command);
+      CHECK(f.rolling_code == rc.rolling, "[real] %s rolling %u != %u\n", rc.name, f.rolling_code, rc.rolling);
+      CHECK(f.remote_code == rc.remote, "[real] %s remote 0x%06X != 0x%06X\n", rc.name, f.remote_code, rc.remote);
+    }
+    cases++;
+  }
+
   std::printf("ran %d cases, %d failures\n", cases, g_failures);
   return g_failures == 0 ? 0 : 1;
 }

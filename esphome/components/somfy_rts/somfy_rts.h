@@ -7,18 +7,10 @@
 
 #include "RollingCodeStorage.h"
 #include "NVSRollingCodeStorage.h"
+#include "somfy_rts_protocol.h"
 
 namespace esphome {
 namespace somfy_rts {
-
-static const uint16_t SYMBOL = 640;  // microseconds
-
-enum class Command : uint8_t {
-  My = 0x1,
-  Up = 0x2,
-  Down = 0x4,
-  Prog = 0x8,
-};
 
 class SomfyRts : public Component {
  public:
@@ -55,10 +47,6 @@ class SomfyRts : public Component {
   RollingCodeStorage *storage_{nullptr};
 
   void send_command_impl_(Command command, int repeat_count);
-  void build_frame(uint8_t *frame, Command command, uint16_t rolling_code);
-  void build_timings(remote_base::RawTimings &t, uint8_t *frame, uint8_t sync_count);
-  static void send_high(remote_base::RawTimings &t, int32_t duration_usecs);
-  static void send_low(remote_base::RawTimings &t, int32_t duration_usecs);
 };
 
 template<typename... Ts> class OpenAction : public Action<Ts...> {

@@ -110,16 +110,24 @@ inline int somfy_half_symbols(int32_t duration_usecs) {
   return (d + SYMBOL / 2) / SYMBOL;
 }
 
-// Decode a single frame whose software sync (~4550 us high) is at timings[sync].
+// Decode a single frame whose first data pulse is at timings[data_start].
+//
+// The ~4550 us software-sync HIGH that precedes the data on the wire is NOT
+// required here: an edge-based receiver (CC1101 + remote_receiver) frequently
+// drops that pulse and splits the transmission so a capture begins straight at
+// the first data pulse. Working from the data directly makes the decoder robust
+// to both the encoder's own output (sync present) and real receiver output
+// (sync absent).
+//
 // Returns true and fills *out (command/rolling_code/remote_code; repeat_count
 // untouched) when the nibble checksum validates.
-inline bool decode_somfy_frame_at(const std::vector<int32_t> &timings, size_t sync, DecodedFrame *out) {
+inline bool decode_somfy_frame_at(const std::vector<int32_t> &timings, size_t data_start, DecodedFrame *out) {
   const size_t n = timings.size();
 
-  // Expand the pulses after the software sync into half-bits, stopping at the
-  // inter-frame gap or the next frame's hardware sync (>= 3 half-symbols).
+  // Expand the data pulses into half-bits, stopping at the inter-frame gap or
+  // the next frame's hardware sync (>= 3 half-symbols).
   std::vector<bool> hb;  // true = HIGH half-bit
-  for (size_t j = sync + 1; j < n; j++) {
+  for (size_t j = data_start; j < n; j++) {
     int hs = somfy_half_symbols(timings[j]);
     if (hs >= 3 || hs < 1) {
       // A long LOW terminator (the inter-frame gap) can absorb the trailing
@@ -193,9 +201,17 @@ inline bool decode_somfy_frame_at(const std::vector<int32_t> &timings, size_t sy
 inline bool decode_somfy_frame(const std::vector<int32_t> &timings, DecodedFrame *out) {
   bool found = false;
   uint8_t matches = 0;
-  for (size_t i = 0; i + 1 < timings.size(); i++) {
-    // Lock onto the software sync: a ~4550 us HIGH pulse.
-    if (timings[i] < 4000 || timings[i] > 5200)
+  const size_t n = timings.size();
+  for (size_t i = 0; i < n; i++) {
+    // Lock onto the start of a data run: a short pulse (1-2 half-symbols) that
+    // either opens the capture or directly follows a long pulse (hardware sync,
+    // software sync, or inter-frame gap; >= 3 half-symbols). Data pulses are
+    // never that long, so this skips mid-frame pulses and fires once per frame,
+    // without depending on the software-sync HIGH being present.
+    int hs = somfy_half_symbols(timings[i]);
+    if (hs < 1 || hs >= 3)
+      continue;
+    if (i > 0 && somfy_half_symbols(timings[i - 1]) < 3)
       continue;
 
     DecodedFrame f;

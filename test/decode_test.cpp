@@ -1,8 +1,10 @@
 // Host round-trip test for the Somfy RTS protocol logic.
 //
-// Proves decode_somfy_frame() is the exact inverse of build_somfy_timings()
-// across all commands and a wide range of rolling/remote codes, under three
-// signal models:
+// Validates that decode_somfy_frame() round-trips build_somfy_timings() across
+// all commands and a wide range of rolling/remote codes (it exercises the
+// sampled synthetic cases below; it does not claim to cover real-receiver
+// behaviour, every timing tolerance, or capture splitting), under three signal
+// models:
 //   1. raw      - timings exactly as emitted by build_somfy_timings()
 //   2. merged   - consecutive same-level pulses collapsed into one, as a real
 //                 receiver reports edges (this is where the tricky cases live:
@@ -116,6 +118,18 @@ int main() {
     std::vector<int32_t> noise = {1000, -2000, 600, -600, 5000, -700, 300, -100000};
     DecodedFrame f;
     CHECK(!decode_somfy_frame(noise, &f), "noise unexpectedly decoded\n");
+    cases++;
+  }
+
+  // A checksum-valid frame carrying an unsupported command nibble must be
+  // rejected (the encoder never produces command 0x0).
+  {
+    uint8_t frame[7];
+    build_somfy_frame(frame, static_cast<Command>(0x0), 0x1234, 0xABCDEF);
+    std::vector<int32_t> t;
+    build_somfy_timings(t, frame, 2);
+    DecodedFrame f;
+    CHECK(!decode_somfy_frame(t, &f), "frame with unsupported command 0x0 unexpectedly decoded\n");
     cases++;
   }
 

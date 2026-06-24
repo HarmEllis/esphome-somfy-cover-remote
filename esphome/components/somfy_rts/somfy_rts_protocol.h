@@ -169,7 +169,17 @@ inline bool decode_somfy_frame_at(const std::vector<int32_t> &timings, size_t sy
     if (calc != checksum)
       continue;
 
-    out->command = static_cast<Command>(frame[1] >> 4);
+    // The 4-bit checksum alone is weak on a noisy 433 MHz receiver, so also
+    // require the fixed key byte and a supported command nibble. This rejects
+    // checksum-valid garbage that this protocol would never produce.
+    if (frame[0] != 0xA7)
+      continue;
+    const uint8_t button = frame[1] >> 4;
+    if (button != static_cast<uint8_t>(Command::My) && button != static_cast<uint8_t>(Command::Up) &&
+        button != static_cast<uint8_t>(Command::Down) && button != static_cast<uint8_t>(Command::Prog))
+      continue;
+
+    out->command = static_cast<Command>(button);
     out->rolling_code = (frame[2] << 8) | frame[3];
     out->remote_code = (static_cast<uint32_t>(frame[4]) << 16) | (frame[5] << 8) | frame[6];
     return true;

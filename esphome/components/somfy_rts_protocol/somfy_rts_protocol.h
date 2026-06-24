@@ -1,9 +1,10 @@
 #pragma once
 
-// Pure Somfy RTS wire-format logic, shared by the transmit path (SomfyRts) and
-// the future receive path (somfy_rts_receiver). This header intentionally has
-// no ESPHome dependencies (only <cstdint>/<vector>) so the encode/decode logic
-// is a single source of truth and can be unit-tested on the host.
+// Pure Somfy RTS wire-format logic, shared by the transmit path (somfy_rts) and
+// the receive path (somfy_rts_receiver). This header intentionally has no
+// ESPHome dependencies (only <cstdint>/<vector>) so the encode/decode logic is a
+// single source of truth and can be unit-tested on the host. It lives in its own
+// dependency-free component (somfy_rts_protocol) that both sides AUTO_LOAD.
 //
 // remote_base::RawTimings is std::vector<int32_t> (positive = mark/high,
 // negative = space/low, microseconds), so these functions operate on that type
@@ -23,6 +24,20 @@ enum class Command : uint8_t {
   Down = 0x4,
   Prog = 0x8,
 };
+
+inline const char *command_to_string(Command command) {
+  switch (command) {
+    case Command::My:
+      return "MY";
+    case Command::Up:
+      return "UP";
+    case Command::Down:
+      return "DOWN";
+    case Command::Prog:
+      return "PROG";
+  }
+  return "UNKNOWN";
+}
 
 struct DecodedFrame {
   Command command;

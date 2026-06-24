@@ -7,6 +7,7 @@ from esphome.const import CONF_ID
 
 CODEOWNERS = ["@HarmEllis"]
 DEPENDENCIES = ["remote_transmitter"]
+AUTO_LOAD = ["somfy_rts_protocol"]
 MULTI_CONF = True
 
 somfy_rts_ns = cg.esphome_ns.namespace("somfy_rts")

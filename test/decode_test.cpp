@@ -22,7 +22,7 @@
 #include <cstdlib>
 #include <vector>
 
-#include "../esphome/components/somfy_rts/somfy_rts_protocol.h"
+#include "../esphome/components/somfy_rts_protocol/somfy_rts_protocol.h"
 
 using namespace esphome::somfy_rts;
 

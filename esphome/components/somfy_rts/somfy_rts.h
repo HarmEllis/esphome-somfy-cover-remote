@@ -7,7 +7,7 @@
 
 #include "RollingCodeStorage.h"
 #include "NVSRollingCodeStorage.h"
-#include "somfy_rts_protocol.h"
+#include "esphome/components/somfy_rts_protocol/somfy_rts_protocol.h"
 
 namespace esphome {
 namespace somfy_rts {

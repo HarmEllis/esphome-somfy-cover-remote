@@ -4,6 +4,10 @@ This is an external component for [ESPHome](https://esphome.io/) to control Somf
 
 It now provides a **Somfy RTS command layer** (`somfy_rts:`) that you wire into the official ESPHome `time_based` cover platform for position control.
 
+It also provides a **Somfy RTS receiver** (`somfy_rts_receiver:`) that decodes Somfy RTS frames captured by a `remote_receiver`, so you can sniff and log the command, remote code and rolling code of existing remotes. See [Receiving and decoding frames](#receiving-and-decoding-frames).
+
+> **Note on `components:`** The repository ships several cooperating components (`somfy_rts`, `somfy_rts_receiver`, and the shared `somfy_rts_protocol` helper). The protocol helper is pulled in automatically (`AUTO_LOAD`), but ESPHome can only auto-load it if it is available in the source, so either list it explicitly in `components:` (as shown below) or drop the `components:` filter entirely.
+
 ## Migration
 
 If you used the old `cover: - platform: somfy_cover` setup, read:
@@ -25,7 +29,7 @@ esphome:
 
 external_components:
   - source: github://HarmEllis/esphome-somfy-cover-remote@main
-    components: [ somfy_rts ]
+    components: [ somfy_rts, somfy_rts_protocol ]
 
 esp32:
   board: esp32dev
@@ -233,6 +237,92 @@ on_...:
         command: UP
         repeat_count: !lambda 'return id(tilt_steps).state;'
 ```
+
+## Receiving and decoding frames
+
+The `somfy_rts_receiver:` component decodes Somfy RTS frames captured by the official ESPHome `remote_receiver` and logs the `command`, `remote_code` and `rolling_code`. Use it on a second ESP32 + CC1101 (with the CC1101 in receive mode) to sniff existing remotes, or to verify what this controller transmits.
+
+The decoder locks onto the data burst itself, so it works with real receiver output where the software-sync pulse is dropped and the transmission is split across several `Received Raw` captures.
+
+```yaml
+esphome:
+  name: somfy-sniffer
+  # Put the CC1101 in receive mode at boot
+  on_boot:
+    then:
+      - cc1101.begin_rx: cc1101_radio
+
+external_components:
+  - source: github://HarmEllis/esphome-somfy-cover-remote@main
+    components: [ somfy_rts_receiver, somfy_rts_protocol ]
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+logger:
+api:
+ota:
+  platform: esphome
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+# SPI bus for CC1101 (adjust pins for your board)
+spi:
+  clk_pin: GPIO14
+  mosi_pin: GPIO12
+  miso_pin: GPIO39
+
+cc1101:
+  id: cc1101_radio
+  cs_pin: GPIO15
+  frequency: 433.42MHz
+  modulation_type: ASK/OOK
+
+# Data (GDO0) pin of the CC1101. Tune tolerance/filter/idle for RF.
+remote_receiver:
+  id: receiver
+  pin: GPIO2
+  tolerance: 40%
+  filter: 250us
+  idle: 4ms
+
+somfy_rts_receiver:
+  remote_receiver: receiver
+  on_frame:
+    - lambda: |-
+        ESP_LOGI("somfy", "Got %s from remote 0x%06X (rolling %u)",
+                 esphome::somfy_rts::command_to_string(x.command),
+                 x.remote_code, x.rolling_code);
+```
+
+Each button press is logged once at `INFO`, e.g.:
+
+```
+[somfy_rts_receiver]: UP remote=0x1904DA rolling=447
+```
+
+### Component configuration (`somfy_rts_receiver:`)
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `id` | No | | ID of the receiver instance |
+| `remote_receiver` | Yes | | ID of the `remote_receiver` component to listen on |
+| `dedup_window` | No | `2000ms` | A press is repeated many times on the air; frames with the same remote + rolling code + command within this window are collapsed so the press is reported once |
+| `on_frame` | No | | Automation triggered once per decoded press |
+
+### `on_frame` trigger
+
+The `on_frame` automation receives the decoded frame as `x`:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `x.command` | `somfy_rts::Command` | `MY` / `UP` / `DOWN` / `PROG`; pass to `esphome::somfy_rts::command_to_string(x.command)` for a string |
+| `x.remote_code` | `uint32_t` | 3-byte remote address |
+| `x.rolling_code` | `uint16_t` | Rolling code carried in the frame |
 
 ## Credits
 

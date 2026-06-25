@@ -282,13 +282,17 @@ cc1101:
   frequency: 433.42MHz
   modulation_type: ASK/OOK
 
-# Data (GDO0) pin of the CC1101. Tune tolerance/filter/idle for RF.
+# Data (GDO0) pin of the CC1101. Tune tolerance/filter for RF.
 remote_receiver:
   id: receiver
   pin: GPIO2
   tolerance: 40%
   filter: 250us
-  idle: 4ms
+  # idle ends a capture whenever any level stays stable longer than this. Keep
+  # it at the ESPHome default of 10ms: a Somfy frame contains a ~4550us
+  # software-sync HIGH, so a lower idle (e.g. 4ms) splits each frame into
+  # separate captures. 10ms keeps a whole frame in one capture.
+  idle: 10ms
 
 somfy_rts_receiver:
   remote_receiver: receiver
